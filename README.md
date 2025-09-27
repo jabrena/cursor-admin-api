@@ -9,6 +9,7 @@ The Cursor Teams Admin API provides comprehensive functionality for managing tea
 - **Team Management**: Create, update, delete, and list teams
 - **Member Management**: Add, remove, and manage team member roles
 - **User Management**: Create, update, and manage user accounts
+- **Spending Analytics**: Retrieve team spending and usage information
 - **Organization Settings**: Configure organization-wide policies and settings
 
 ## 🗂️ API Structure
@@ -45,6 +46,9 @@ Authorization: Bearer <your-jwt-token>
 - `GET /users/{userId}` - Get user details
 - `PUT /users/{userId}` - Update user information
 - `DELETE /users/{userId}` - Delete user account
+
+#### Team Spending (`/teams/spend`)
+- `POST /teams/spend` - Get team spending information with search and pagination
 
 #### Organization Settings (`/organizations/settings`)
 - `GET /organizations/settings` - Get organization settings
@@ -100,6 +104,20 @@ curl -X GET "https://api.cursor.com/v1/teams?search=engineering&limit=10" \
   -H "Authorization: Bearer <token>"
 ```
 
+### Get Team Spending Information
+```bash
+curl -X POST https://api.cursor.com/v1/teams/spend \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "searchTerm": "developer",
+    "sortBy": "amount",
+    "sortDirection": "desc",
+    "page": 1,
+    "pageSize": 20
+  }'
+```
+
 ## 📝 Data Models
 
 ### Team Object
@@ -138,6 +156,25 @@ curl -X GET "https://api.cursor.com/v1/teams?search=engineering&limit=10" \
   "role": "member",
   "joined_at": "2023-03-01T12:00:00Z",
   "status": "active"
+}
+```
+
+### Team Spending Response
+```json
+{
+  "teamMemberSpend": [
+    {
+      "spendCents": 2450,
+      "fastPremiumRequests": 1250,
+      "name": "Alex",
+      "email": "developer@company.com",
+      "role": "member",
+      "hardLimitOverrideDollars": 100
+    }
+  ],
+  "subscriptionCycleStart": 1708992000000,
+  "totalMembers": 15,
+  "totalPages": 1
 }
 ```
 

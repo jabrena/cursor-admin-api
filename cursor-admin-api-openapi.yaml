@@ -549,6 +549,74 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /teams/spend:
+    post:
+      summary: Get team spending information
+      description: |
+        Retrieve spending information for team members for the current calendar month.
+        Supports search, sorting, and pagination to analyze team usage and costs.
+      operationId: getTeamSpend
+      tags:
+        - Spending
+      requestBody:
+        description: Parameters for filtering and pagination of spending data
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamSpendRequest'
+            examples:
+              basic_request:
+                summary: Basic spending request
+                value:
+                  page: 1
+                  pageSize: 20
+                  sortBy: "amount"
+                  sortDirection: "desc"
+              search_request:
+                summary: Search and filter request
+                value:
+                  searchTerm: "developer"
+                  page: 1
+                  pageSize: 10
+                  sortBy: "user"
+                  sortDirection: "asc"
+      responses:
+        '200':
+          description: Team spending information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamSpendResponse'
+              examples:
+                spending_data:
+                  summary: Team spending response
+                  value:
+                    teamMemberSpend:
+                      - spendCents: 2450
+                        fastPremiumRequests: 1250
+                        name: "Alex"
+                        email: "developer@company.com"
+                        role: "member"
+                        hardLimitOverrideDollars: 100
+                      - spendCents: 1875
+                        fastPremiumRequests: 980
+                        name: "Sam"
+                        email: "admin@company.com"
+                        role: "owner"
+                        hardLimitOverrideDollars: 0
+                    subscriptionCycleStart: 1708992000000
+                    totalMembers: 15
+                    totalPages: 1
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /organizations/settings:
     get:
       summary: Get organization settings
@@ -1077,6 +1145,109 @@ components:
           description: Whether there are more items available
           example: true
 
+    TeamSpendRequest:
+      type: object
+      properties:
+        searchTerm:
+          type: string
+          description: Search within user names and emails
+          maxLength: 100
+          example: "developer"
+        sortBy:
+          type: string
+          enum: [amount, date, user]
+          description: Sort by amount, date, or user
+          default: "date"
+          example: "amount"
+        sortDirection:
+          type: string
+          enum: [asc, desc]
+          description: Sort direction, either ascending or descending
+          default: "desc"
+          example: "desc"
+        page:
+          type: integer
+          description: Page number (1-indexed)
+          minimum: 1
+          default: 1
+          example: 1
+        pageSize:
+          type: integer
+          description: Number of results per page
+          minimum: 1
+          maximum: 100
+          default: 20
+          example: 20
+
+    TeamSpendResponse:
+      type: object
+      required:
+        - teamMemberSpend
+        - subscriptionCycleStart
+        - totalMembers
+        - totalPages
+      properties:
+        teamMemberSpend:
+          type: array
+          description: Array of team member spending data
+          items:
+            $ref: '#/components/schemas/TeamMemberSpend'
+        subscriptionCycleStart:
+          type: integer
+          format: int64
+          description: Subscription cycle start time in epoch milliseconds
+          example: 1708992000000
+        totalMembers:
+          type: integer
+          description: Total number of team members
+          minimum: 0
+          example: 15
+        totalPages:
+          type: integer
+          description: Total number of pages available
+          minimum: 1
+          example: 1
+
+    TeamMemberSpend:
+      type: object
+      required:
+        - spendCents
+        - fastPremiumRequests
+        - name
+        - email
+        - role
+        - hardLimitOverrideDollars
+      properties:
+        spendCents:
+          type: integer
+          description: Total spend in cents for the current billing cycle
+          minimum: 0
+          example: 2450
+        fastPremiumRequests:
+          type: integer
+          description: Number of fast premium model requests made
+          minimum: 0
+          example: 1250
+        name:
+          type: string
+          description: Member's display name
+          example: "Alex"
+        email:
+          type: string
+          format: email
+          description: Member's email address
+          example: "developer@company.com"
+        role:
+          type: string
+          enum: [owner, member, free-owner]
+          description: Team role of the member
+          example: "member"
+        hardLimitOverrideDollars:
+          type: integer
+          description: Custom spending limit override in dollars (0 means no override)
+          minimum: 0
+          example: 100
+
     Error:
       type: object
       required:
@@ -1117,5 +1288,7 @@ tags:
     description: Operations related to team member management
   - name: Users
     description: Operations related to user management
+  - name: Spending
+    description: Operations related to team spending and usage analytics
   - name: Organization
     description: Operations related to organization settings
